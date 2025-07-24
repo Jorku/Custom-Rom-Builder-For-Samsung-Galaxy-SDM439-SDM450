@@ -1,23 +1,23 @@
-name: Custom Rom Builder Samsung Galaxy A11/M11
+name: Custom ROM Builder Samsung Galaxy A11/M11
 
-on:
+onソー
   push:
     branches:
-      - main  # Change this to your desired branch
+      - A11-M11  # Cambia de 'main' a 'A11-M11'
   workflow_dispatch:
     inputs:
       GSI:
-        description: 'direct link for Gsi image '
+        description: 'Direct link for GSI image'
         required: true
-        default: 'https://sourceforge.net/projects/andyyan-gsi/files/lineage-20-td/lineage-20.0-20250606-UNOFFICIAL-a64_bvN.img.gz'        
+        default: 'https://sourceforge.net/projects/andyyan-gsi/files/lineage-20-td/lineage-20.0-20250606-UNOFFICIAL-a64_bvN.img.gz'
       ARCH:
         description: 'ARM64 or ARM32?'
         required: true
-        default: '32'                
+        default: '32'
       NAME:
-        description: 'Rom Name'
+        description: 'ROM Name'
         required: true
-        default: 'LineageOS_20.0_SDM439_ARM32_Vanilla'                
+        default: 'LineageOS_20.0_SDM439_ARM32_Vanilla'
 
 jobs:
   Build:
@@ -25,32 +25,34 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install Dependencies
       run: |
         sudo apt update
         sudo apt install -y zip xz-utils unzip p7zip-full wget
-        
-    - name: Preparing Files
-      run: |
-        wget https://sourceforge.net/projects/samsung-galaxy-a01-m01/files/a11q.zip
-        git clone https://github.com/smiley9000/Custom-Rom-Builder-For-Samsung-Galaxy-A11-M11
-        unzip a11q.zip
-        rm -r a11q.zip
 
-    - name: Downloading your GSI
+    - name: Download and Prepare GSI
       run: |
-        wget -P "./temp" ${{ github.event.inputs.GSI }} 
-        chmod 755 *
-        chmod 755 ./bin/*
+        mkdir -p rom/gsi
+        wget -P rom/gsi ${{ github.event.inputs.GSI }}
+        unxz rom/gsi/*.img.xz
+        mv rom/gsi/*.img rom/gsi/${{ github.event.inputs.NAME }}.img
 
-    - name: Building
+    - name: Download a11qzip Script
       run: |
-        ./arm${{ github.event.inputs.ARCH }}_git
-        
-    - name: Uploading The Zip
-      uses: actions/upload-artifact@v2
+        # Reemplaza con el enlace correcto para a11qzip
+        # Por ejemplo, si está en el grupo de Telegram, obtén el enlace y descárgalo
+        wget <URL_DEL_SCRIPT_A11QZIP> -O a11qzip
+        chmod +x a11qzip
+      continue-on-error: true  # En caso de que el enlace no esté disponible
+
+    - name: Build ROM
+      run: |
+        ./a11qzip rom/gsi/${{ github.event.inputs.NAME }}.img
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
       with:
-        name: ${{ github.event.inputs.NAME }}   # Replace with a suitable name
-        path: ./zip/Custom_Rom_SDM450.zip
+        name: ${{ github.event.inputs.NAME }}
+        path: out/*.zip
